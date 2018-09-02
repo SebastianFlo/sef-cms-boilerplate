@@ -1,18 +1,29 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <img alt="SEF CMS logo" src="../assets/logo.png" class="sef-logo">
+    <Preview :id="templateId"/>
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+import Preview from '@/components/Preview.vue'
 
 export default {
   name: 'home',
   components: {
-    HelloWorld
-  }
+    Preview
+  },
+  data: function () {
+        return {
+            templateId: '2'
+        }
+    },
 }
 </script>
+
+<style scoped lang="scss">
+    .sef-logo {
+        height: 250px;
+    }
+</style>
