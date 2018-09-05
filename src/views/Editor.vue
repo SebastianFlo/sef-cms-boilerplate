@@ -14,7 +14,7 @@
                 <div class="layers-container"></div>
                 <div class="styles-container"></div>
                 <div class="traits-container"></div>
-                <div class="blocks-container"></div>
+                <div style="display: none" class="blocks-container"></div>
             </div>
         </div>
     </section>
@@ -39,8 +39,13 @@
             editorVM = this;
             this.editor = this.generateEditor();
             this.defineCommands(this.editor);
+
+            this.editor.on('change', this.change); // vue helper method
         },
         methods: {
+            change() {
+                this.$emit('change', this.editor.getHtml());
+            },
             generateEditor() {
                 console.log('Editor: generating editor');
                 return grapesjs.init({
@@ -241,6 +246,15 @@
                     },
                     stop() {
                         editorVM.hideContainer('.blocks-container');
+                    }
+                });
+
+                editor.Commands.add('show-traits', {
+                    run() {
+                        editorVM.showContainer('.traits-container');
+                    },
+                    stop() {
+                        editorVM.hideContainer('.traits-container');
                     }
                 });
             },
