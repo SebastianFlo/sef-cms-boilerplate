@@ -23,6 +23,8 @@
 <script>
     import grapesjs from 'grapesjs';
     import axios from 'axios';
+    import Drawing from '@/components/Drawing.vue';
+    import Vue from 'vue'
     // import 'grapesjs-blocks-basic';
     // import 'grapesjs-preset-webpage';
     let editorVM;
@@ -35,15 +37,19 @@
                 templateId: 2
             }
         },
+        components: {
+            'drawing': Drawing
+        },
         mounted: function () {
             editorVM = this;
             this.editor = this.generateEditor();
             this.defineCommands(this.editor);
             this.expandTraints(this.editor);
             this.expandComponents(this.editor);
+            this.defineComponents(this.editor);
             this.addCustomBlocks(this.editor);
 
-            this.editor.on('change', this.change); // vue helper method
+            this.connectToVue(this.editor);
         },
         methods: {
             change() {
@@ -142,19 +148,15 @@
                             // reacts by opening the AssetManager
                             activate: true,
                         }, {
-                            id: 'drawing',
+                            id: 'sef-drawing',
                             label: 'Drawing',
                             select: true,
                             // You can pass components as a JSON instead of a simple HTML string,
                             // in this case we also use a defined component type `image`
                             content: {
-                                style: { width: '350px'},
+                                style: { width: '350px', height: '400px' },
                                 components: `
-                                    <div class="sef-component-drawing">
-                                        <img src="https://via.placeholder.com/350x150">
-                                        <h1>This is the drawing title</h1>
-                                        <div>This is just a Lorem text: Lorem ipsum dolor sit amet</div>
-                                    </div>
+                                    <drawing src="https://via.placeholder.com/350x150"></drawing>
                                 `,
                             },
                             // This triggers `active` event on dropped components and the `image`
@@ -327,6 +329,7 @@
                                     label: 'Source',
                                     name: 'src',
                                     type: 'src',
+                                    changeProp: 1,
                                 },
                                 {
                                     label: 'Zoomable',
@@ -341,6 +344,95 @@
                         }
                     }),
                     view: imageType.view
+                });
+            },
+            defineComponents(editor) {
+                // Get DomComponents module
+                const comps = editor.DomComponents;
+
+                // Get the model and the view from the default Component type
+                const defaultType = comps.getType('default');
+                const defaultModel = defaultType.model;
+                const defaultView = defaultType.view;
+
+                // The `input` will be the Component type ID
+                comps.addType('drawing', {
+                    // Define the Model
+                    model: defaultModel.extend({
+                        init() {
+                            this.listenTo(this, 'change:image-link', this.updateImage);
+                        },
+                        // Extend default properties
+                        defaults: Object.assign({}, defaultModel.prototype.defaults, {
+                            traits: [
+                                {
+                                    type: 'link',
+                                    label: 'Image Link',
+                                    name: 'image-link',
+                                    changeProp: 1,
+                                },{
+                                    type: 'text',
+                                    label: 'Name',
+                                    name: 'name',
+                                    changeProp: 1,
+                            }],
+                        }),
+                        updateImage(model) {
+                            this.view.el.firstChild.firstChild.src = model.get('image-link');
+                        }
+                    },
+                    {
+                        isComponent: function(el) {
+                            if(el.tagName == 'DRAWING'){
+                                return { type: 'drawing' };
+                            }
+                        },
+                    }),
+
+                    // Define the View
+                    view: defaultType.view.extend({
+                        // Bind events
+                        events: {
+                                // If you want to bind the event to children elements
+                                // 'click .someChildrenClass': 'methodName',
+                                click: 'handleClick', dblclick: function(){
+                                    alert('Hi!');
+                                }
+                            },
+
+                        // It doesn't make too much sense this method inside the component
+                        // but it's ok as an example
+                        randomHex: function() {
+                            return '#' + Math.floor(Math.random()*16777216).toString(16);
+                        },
+
+                        handleClick: function(e) {
+                            this.model.set('style', {color: this.randomHex()}); // <- Affects the final HTML code
+                            this.el.style.backgroundColor = this.randomHex(); // <- Doesn't affect the final HTML code
+                            // Tip: updating the model will reflect the changes to the view, so, in this case,
+                            // if you put the model change after the DOM one this will override the backgroundColor
+                            // change made before
+                        },
+
+                        // The render() should return 'this'
+                        render: function () {
+                            var ComponentClass = Vue.extend(Drawing);
+                            var instance = new ComponentClass({
+                                propsData: {
+                                    url: 'https://via.placeholder.com/350x150'
+                                }
+                            }
+                            );
+                            instance.$mount() // pass nothing
+                            const drawingEl = instance.$el;
+
+                            // Extend the original render method
+                            // this.el.placeholder = 'Text here'; // <- Doesn't affect the final HTML code
+                            defaultType.view.prototype.render.apply(this, arguments);
+                            this.el = drawingEl;
+                            return this;
+                        },
+                    }),
                 });
             },
             addCustomBlocks(editor) {
@@ -360,6 +452,14 @@
             hideContainer(container) {
                 this.getElInRow(this.editor.getContainer().closest('.editor-row'), container).style.display = 'none';
             },
+            connectToVue(editor) {
+                editor.on('change', this.change); // vue helper method
+
+                editor.on('component:add', () => {
+                // when new component is added, re-render the vue components to normal html
+                    this.$forceUpdate();
+                });
+            }
         }
     }
 </script>
