@@ -11,10 +11,10 @@
                 </div>
             </div>
             <div class="panel__right">
-                <div class="layers-container"></div>
-                <div class="styles-container"></div>
-                <div class="traits-container"></div>
-                <div style="display: none" class="blocks-container"></div>
+                <div style="display: none" class="layers-container"></div>
+                <div style="display: none" class="styles-container"></div>
+                <div style="display: none" class="traits-container"></div>
+                <div class="blocks-container"></div>
             </div>
         </div>
     </section>
@@ -39,6 +39,9 @@
             editorVM = this;
             this.editor = this.generateEditor();
             this.defineCommands(this.editor);
+            this.expandTraints(this.editor);
+            this.expandComponents(this.editor);
+            this.addCustomBlocks(this.editor);
 
             this.editor.on('change', this.change); // vue helper method
         },
@@ -48,19 +51,23 @@
             },
             generateEditor() {
                 console.log('Editor: generating editor');
-                return grapesjs.init({
-                    container: '#gjs',
-                    fromElement: true,
-                    height: '100%',
-                    layerManager: {
-                        appendTo: '.layers-container'
-                    },
-                    selectorManager: {
-                        appendTo: '.styles-container'
-                    },
-                    styleManager: {
-                        appendTo: '.styles-container',
-                        sectors: [{
+
+                const layerManager = {
+                    appendTo: '.layers-container'
+                };
+
+                const selectorManager = {
+                    appendTo: '.styles-container'
+                };
+
+                const styleManager = {
+                    appendTo: '.styles-container',
+                    sectors: [
+                        {
+                            name: 'Alignment',
+                            open: false,
+                            buildProps: ['text-align'],
+                            }, {
                             name: 'Dimension',
                             open: false,
                             // Use built-in properties
@@ -81,7 +88,7 @@
                         }, {
                             name: 'Extra',
                             open: false,
-                            buildProps: ['background-color', 'box-shadow', 'custom-prop'],
+                            buildProps: ['color', 'background-color', 'box-shadow', 'custom-prop'],
                             properties: [
                                 {
                                     id: 'custom-prop',
@@ -89,7 +96,6 @@
                                     property: 'font-size',
                                     type: 'select',
                                     defaults: '32px',
-                                    // List of options, available only for 'select' and 'radio'  types
                                     options: [
                                         { value: '12px', name: 'Tiny' },
                                         { value: '18px', name: 'Medium' },
@@ -97,126 +103,163 @@
                                     ],
                                 }
                             ]
-                        }]
-                    },
-                    storageManager: { type: null },
-                    traitManager: {
-                        appendTo: '.traits-container',
-                    },
-                    blockManager: {
-                        appendTo: '.blocks-container',
-                        blocks: [
-                            {
-                                id: 'section',
-                                label: '<b>Section</b>', // You can use HTML/SVG inside labels
-                                attributes: { class: 'gjs-block-section' },
-                                content: `<section>
-                                <h1>This is a simple title</h1>
+                        }
+                    ]
+                };
+
+                const storageManager = { type: null };
+
+                const traitManager = {
+                    appendTo: '.traits-container',
+                };
+
+                // TODO: Define blocks as separate components. Maybe Vue comp?
+                const blockManager = {
+                    appendTo: '.blocks-container',
+                    blocks: [
+                        {
+                            id: 'section',
+                            label: '<b>Section</b>', // You can use HTML/SVG inside labels
+                            attributes: { class: 'gjs-block-section' },
+                            content: `<section>
+                                <h1 style="font-size: 32px">This is a simple title</h1>
                                 <div>This is just a Lorem text: Lorem ipsum dolor sit amet</div>
-                                </section>`,
+                            </section>`,
+                        },
+                        {
+                            id: 'text',
+                            label: 'Text',
+                            content: '<div data-gjs-type="text">Insert your text here</div>',
+                        }, {
+                            id: 'image',
+                            label: 'Image',
+                            // Select the component once it's dropped
+                            select: true,
+                            // You can pass components as a JSON instead of a simple HTML string,
+                            // in this case we also use a defined component type `image`
+                            content: { type: 'image' },
+                            // This triggers `active` event on dropped components and the `image`
+                            // reacts by opening the AssetManager
+                            activate: true,
+                        }, {
+                            id: 'drawing',
+                            label: 'Drawing',
+                            select: true,
+                            // You can pass components as a JSON instead of a simple HTML string,
+                            // in this case we also use a defined component type `image`
+                            content: {
+                                style: { width: '350px'},
+                                components: `
+                                    <div class="sef-component-drawing">
+                                        <img src="https://via.placeholder.com/350x150">
+                                        <h1>This is the drawing title</h1>
+                                        <div>This is just a Lorem text: Lorem ipsum dolor sit amet</div>
+                                    </div>
+                                `,
                             },
-                            {
-                                id: 'text',
-                                label: 'Text',
-                                content: '<div data-gjs-type="text">Insert your text here</div>',
-                            }, {
-                                id: 'image',
-                                label: 'Image',
-                                // Select the component once it's dropped
-                                select: true,
-                                // You can pass components as a JSON instead of a simple HTML string,
-                                // in this case we also use a defined component type `image`
-                                content: { type: 'image' },
-                                // This triggers `active` event on dropped components and the `image`
-                                // reacts by opening the AssetManager
-                                activate: true,
-                            }
-                        ]
+                            // This triggers `active` event on dropped components and the `image`
+                            // reacts by opening the AssetManager
+                            activate: true,
+                        }
+                    ]
+                };
+
+                const sefPanels = [
+                    {
+                        id: 'layers',
+                        el: '.panel__right',
+                        // Make the panel resizable
+                        resizable: {
+                            maxDim: 550,
+                            minDim: 200,
+                            tc: 0, // Top handler
+                            cl: 1, // Left handler
+                            cr: 0, // Right handler
+                            bc: 0, // Bottom handler
+                            // Being a flex child we need to change `flex-basis` property
+                            // instead of the `width` (default)
+                            keyWidth: 'flex-basis',
+                        }
                     },
-                    panels: {
-                        defaults: [
+                    {
+                        id: 'panel-top',
+                        el: '.panel__top',
+                    },
+                    {
+                        id: 'basic-actions',
+                        el: '.panel__basic-actions',
+                        buttons: [
                             {
-                                id: 'layers',
-                                el: '.panel__right',
-                                // Make the panel resizable
-                                resizable: {
-                                    maxDim: 350,
-                                    minDim: 200,
-                                    tc: 0, // Top handler
-                                    cl: 1, // Left handler
-                                    cr: 0, // Right handler
-                                    bc: 0, // Bottom handler
-                                    // Being a flex child we need to change `flex-basis` property
-                                    // instead of the `width` (default)
-                                    keyWidth: 'flex-basis',
-                                }
-                            },
+                                id: 'visibility',
+                                active: true, // active by default
+                                className: 'btn-toggle-borders',
+                                label: '<u>B</u>',
+                                command: 'sw-visibility', // Built-in command
+                            }, {
+                                id: 'export',
+                                className: 'btn-open-export',
+                                label: 'Exp',
+                                command: 'export-template',
+                                context: 'export-template', // For grouping context of buttons from the same panel
+                            }, {
+                                id: 'show-json',
+                                className: 'btn-show-json',
+                                label: 'JSON',
+                                context: 'show-json',
+                                command(editor) {
+                                    editor.Modal.setTitle('Components JSON')
+                                        .setContent(`<textarea style="width:100%; height: 250px;">${JSON.stringify(editor.getComponents())}</textarea>`)
+                                        .open();
+                                },
+                            }
+                        ],
+                    },
+                    {
+                        id: 'panel-switcher',
+                        el: '.panel__switcher',
+                        buttons: [
                             {
-                                id: 'panel-top',
-                                el: '.panel__top',
-                            },
-                            {
-                                id: 'basic-actions',
-                                el: '.panel__basic-actions',
-                                buttons: [
-                                    {
-                                        id: 'visibility',
-                                        active: true, // active by default
-                                        className: 'btn-toggle-borders',
-                                        label: '<u>B</u>',
-                                        command: 'sw-visibility', // Built-in command
-                                    }, {
-                                        id: 'export',
-                                        className: 'btn-open-export',
-                                        label: 'Exp',
-                                        command: 'export-template',
-                                        context: 'export-template', // For grouping context of buttons from the same panel
-                                    }, {
-                                        id: 'show-json',
-                                        className: 'btn-show-json',
-                                        label: 'JSON',
-                                        context: 'show-json',
-                                        command(editor) {
-                                            editor.Modal.setTitle('Components JSON')
-                                                .setContent(`<textarea style="width:100%; height: 250px;">${JSON.stringify(editor.getComponents())}</textarea>`)
-                                                .open();
-                                        },
-                                    }
-                                ],
-                            },
-                            {
-                                id: 'panel-switcher',
-                                el: '.panel__switcher',
-                                buttons: [
-                                {
-                                    id: 'show-layers',
-                                    active: true,
-                                    label: 'Layers',
-                                    command: 'show-layers',
-                                    // Once activated disable the possibility to turn it off
-                                    togglable: false,
-                                }, {
-                                    id: 'show-style',
-                                    active: true,
-                                    label: 'Styles',
-                                    command: 'show-styles',
-                                    togglable: false,
-                                }, {
-                                    id: 'show-traits',
-                                    active: true,
-                                    label: 'Traits',
-                                    command: 'show-traits',
-                                    togglable: false,
-                                }, {
-                                    id: 'show-blocks',
-                                    active: true,
-                                    label: 'Blocks',
-                                    command: 'show-blocks',
-                                    togglable: false,
-                                }
-                                ],
+                                id: 'show-layers',
+                                active: false,
+                                label: 'Layers',
+                                command: 'show-layers',
+                                // Once activated disable the possibility to turn it off
+                                togglable: false,
+                            }, {
+                                id: 'show-style',
+                                active: false,
+                                label: 'Styles',
+                                command: 'show-styles',
+                                togglable: false,
+                            }, {
+                                id: 'show-traits',
+                                active: false,
+                                label: 'Traits',
+                                command: 'show-traits',
+                                togglable: false,
+                            }, {
+                                id: 'show-blocks',
+                                active: true,
+                                label: 'Blocks',
+                                command: 'show-blocks',
+                                togglable: false,
                             }
                         ]
+                    }
+                ];
+
+                return grapesjs.init({
+                    container: '#gjs',
+                    fromElement: true,
+                    height: '100%',
+                    layerManager,
+                    selectorManager,
+                    styleManager,
+                    storageManager,
+                    traitManager,
+                    blockManager,
+                    panels: {
+                        defaults: [ ...sefPanels ],
                     },
                 })
             },
@@ -258,6 +301,56 @@
                     }
                 });
             },
+            expandTraints(editor) {
+                const traitManager = editor.TraitManager;
+                traitManager.addType('src', {
+                    onValueChange: function () {
+                        // this.target.attributes.src = this.model.get('value');
+                        this.target.set('src', this.model.get('value'));
+                    }
+                })
+            },
+            expandComponents(editor) {
+                const dc = editor.DomComponents;
+                const imageType = dc.getType('image');
+
+                dc.addType('image', {
+                    model: imageType.model.extend({
+                        init() {
+                            this.listenTo(this, 'change:zoomable', this.setZoomable);
+                        },
+                        defaults: {
+                            ...imageType.model.prototype.defaults,
+                            traits:[
+                                ...imageType.model.prototype.defaults.traits,
+                                {
+                                    label: 'Source',
+                                    name: 'src',
+                                    type: 'src',
+                                },
+                                {
+                                    label: 'Zoomable',
+                                    type: 'checkbox',
+                                    name: 'zoomable',
+                                    changeProp: 1,
+                                }
+                            ]
+                        },
+                        setZoomable(value) {
+                          console.log('Set Zoomable', value);
+                        }
+                    }),
+                    view: imageType.view
+                });
+            },
+            addCustomBlocks(editor) {
+                const blockManager = editor.BlockManager;
+
+                blockManager.add('input', {
+                    label: 'Input',
+                    content: '<input type="text" placeholder="Add input here">',
+                });
+            },
             getElInRow(row, container) {
                 return row.querySelector(container);
             },
@@ -282,6 +375,7 @@
 
     #gjs {
         border: 3px solid #444;
+        color: red;
     }
 
     .gjs-cv-canvas {
