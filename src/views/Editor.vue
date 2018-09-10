@@ -155,9 +155,7 @@
                             // in this case we also use a defined component type `image`
                             content: {
                                 style: { width: '350px', height: '400px' },
-                                components: `
-                                    <drawing src="https://via.placeholder.com/350x150"></drawing>
-                                `,
+                                components: `<drawing src="https://via.placeholder.com/350x150"></drawing>`,
                             },
                             // This triggers `active` event on dropped components and the `image`
                             // reacts by opening the AssetManager
