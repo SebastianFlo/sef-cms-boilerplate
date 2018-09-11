@@ -2,6 +2,7 @@
     <section>
         <div class="panel__top">
             <div class="panel__basic-actions"></div>
+            <div class="panel__devices"></div>
             <div class="panel__switcher"></div>
         </div>
         <div class="editor-row">
@@ -44,6 +45,7 @@
             this.expandComponents(this.editor);
             this.defineComponents(this.editor);
             this.addCustomBlocks(this.editor);
+            this.addListeners(this.editor);
 
             this.connectToVue(this.editor);
         },
@@ -203,20 +205,17 @@
                         buttons: [
                             {
                                 id: 'show-layers',
-                                active: false,
                                 label: 'Layers',
                                 command: 'show-layers',
                                 // Once activated disable the possibility to turn it off
                                 togglable: false,
                             }, {
                                 id: 'show-style',
-                                active: false,
                                 label: 'Styles',
                                 command: 'show-styles',
                                 togglable: false,
                             }, {
                                 id: 'show-traits',
-                                active: false,
                                 label: 'Traits',
                                 command: 'show-traits',
                                 togglable: false,
@@ -228,8 +227,36 @@
                                 togglable: false,
                             }
                         ]
+                    },
+                    {
+                        id: 'panel-devices',
+                        el: '.panel__devices',
+                        buttons: [{
+                            id: 'device-desktop',
+                            label: 'D',
+                            command: 'set-device-desktop',
+                            active: true,
+                            togglable: false,
+                        }, {
+                            id: 'device-mobile',
+                            label: 'M',
+                            command: 'set-device-mobile',
+                            togglable: false,
+                        }]
                     }
                 ];
+
+                const deviceManager = {
+                    devices: [{
+                        name: 'Desktop',
+                        width: ''
+                    }, {
+                        name: 'Mobile',
+                        width: '320px', // this value will be used on canvas width
+                        widthMedia: '480px', // this value will be used in CSS @media
+                    }
+                ]
+                }
 
                 return grapesjs.init({
                     container: '#gjs',
@@ -241,6 +268,7 @@
                     storageManager,
                     traitManager,
                     blockManager,
+                    deviceManager,
                     panels: {
                         defaults: [ ...sefPanels ],
                     },
@@ -281,6 +309,18 @@
                     },
                     stop() {
                         editorVM.hideContainer('.traits-container');
+                    }
+                });
+
+                editor.Commands.add('set-device-desktop', {
+                    run: (editor) => {
+                        editor.setDevice('Desktop')
+                    }
+                });
+
+                editor.Commands.add('set-device-mobile', {
+                    run: (editor) => {
+                        editor.setDevice('Mobile')
                     }
                 });
             },
@@ -360,6 +400,11 @@
                 // when new component is added, re-render the vue components to normal html
                     this.$forceUpdate();
                 });
+            },
+            addListeners(editor) {
+                editor.on('change:device', () => {
+                    console.log('Current device: ', editor.getDevice());
+                });
             }
         }
     }
@@ -425,6 +470,10 @@
     }
 
     .panel__switcher {
+        position: initial;
+    }
+
+    .panel__devices {
         position: initial;
     }
 </style>
