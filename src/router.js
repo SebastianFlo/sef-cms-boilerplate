@@ -25,7 +25,7 @@ export default new Router({
       // route level code-splitting
       // this generates a separate chunk (editor.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
-      component: () => import(/* webpackChunkName: "editor" */ './views/Editor.vue')
+      component: () => import(/* webpackChunkName: "editor" */ './views/editor/Editor.vue')
     }
   ]
 })
