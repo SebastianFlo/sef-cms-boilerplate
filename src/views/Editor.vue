@@ -438,6 +438,14 @@
         min-height: auto;
     }
 
+    .gjs-mdl-content {
+        text-align: left;
+    }
+
+    .gjs-cm-editor-c {
+        width: 100%;
+    }
+
     .panel__top {
         padding: 0;
         width: 100%;
