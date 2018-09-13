@@ -5,8 +5,7 @@
 </template>
 
 <style lang="scss">
-    @import '../node_modules/grapesjs/dist/css/grapes.min.css';
-    /* @import '../node_modules/grapesjs-preset-webpage/dist/grapesjs-preset-webpage.min.css'; */
+    @import './styles/theme.scss';
 
     html, body {
         margin: 0;

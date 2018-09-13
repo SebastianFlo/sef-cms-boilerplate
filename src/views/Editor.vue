@@ -25,6 +25,8 @@
     import grapesjs from 'grapesjs';
     import axios from 'axios';
     import Vue from 'vue'
+
+    import { StorageManager } from '../utils/managers/storage.manager.js';
     // import 'grapesjs-blocks-basic';
     // import 'grapesjs-preset-webpage';
     let editorVM;
@@ -111,7 +113,7 @@
                     ]
                 };
 
-                const storageManager = { type: null };
+                // const storageManager = { type: null };
 
                 const traitManager = {
                     appendTo: '.traits-container',
@@ -265,7 +267,7 @@
                     layerManager,
                     selectorManager,
                     styleManager,
-                    storageManager,
+                    storageManager: StorageManager,
                     traitManager,
                     blockManager,
                     deviceManager,

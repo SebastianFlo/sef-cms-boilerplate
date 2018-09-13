@@ -1,0 +1,13 @@
+// Some font awesome bug
+$fa-font-path: '~font-awesome/fonts';
+
+// Grapesjs variables
+$fontPath: '~grapesjs/src/styles/fonts';
+
+// Palette variables
+$primaryColor:      #F8CE3D;
+$secondaryColor:    #12403E;
+$tertiaryColor:     #DF6127;
+$quaternaryColor:   #F2E4B1;
+
+@import "~grapesjs/src/styles/scss/main.scss";
