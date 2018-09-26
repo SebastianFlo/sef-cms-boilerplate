@@ -9,7 +9,6 @@ export class CustomTraits {
 
     constructor(editor) {
         this.traitManager = editor.TraitManager;
-
         this.traitManager.addType('src', this.srcTrait);
     }
 }
