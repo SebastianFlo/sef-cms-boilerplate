@@ -98,6 +98,7 @@
                 // const defaultType = comps.getType('default');
                 // const defaultModel = defaultType.model;
                 // const defaultView = defaultType.view;
+                // TODO: Find if this is needed
             },
             addCustomBlocks(editor) {
                 const blockManager = editor.BlockManager;
